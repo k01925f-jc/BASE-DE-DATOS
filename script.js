@@ -1,12 +1,11 @@
 // ══════════════════════════════════════════════
 //  Base de Datos II - UPLA
-//  Supabase Storage: bucket "materiales"
+//  Supabase Storage + Database (tabla: materiales)
 // ══════════════════════════════════════════════
 
-const SUPABASE_URL  = "https://buqrpqtwzujqgwyzmqri.supabase.co";
-const SUPABASE_KEY  = "sb_publishable_JmrFVaGF6-fDZBMstEwjFw_T9-s6hUY";
+const SUPABASE_URL = "https://buqrpqtwzujqgwyzmqri.supabase.co";
+const SUPABASE_KEY = "sb_publishable_JmrFVaGF6-fDZBMstEwjFw_T9-s6hUY";
 
-// Inicializar cliente Supabase correctamente
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const unitInfo = {
@@ -17,21 +16,6 @@ const unitInfo = {
 };
 
 let currentUnit = 1;
-
-// ── Cargar y guardar en localStorage ──
-function loadFiles() {
-  const saved = localStorage.getItem('bd2_files_v2');
-  return saved ? JSON.parse(saved) : {
-    1: { 1: [], 2: [], 3: [], 4: [] },
-    2: { 1: [], 2: [], 3: [], 4: [] },
-    3: { 1: [], 2: [], 3: [], 4: [] },
-    4: { 1: [], 2: [], 3: [], 4: [] },
-  };
-}
-
-function saveFiles(files) {
-  localStorage.setItem('bd2_files_v2', JSON.stringify(files));
-}
 
 // ── Navegación ──
 function goTo(page) {
@@ -82,7 +66,6 @@ function doLoginModal() {
   }
 }
 
-// Enter key en login
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Enter' && document.getElementById('login-modal').style.display === 'flex') {
     doLoginModal();
@@ -91,14 +74,26 @@ document.addEventListener('keydown', (e) => {
 
 function doLogout() { goTo('home'); }
 
-// ── Vista pública ──
-function renderWeeks(unit) {
-  const files = loadFiles();
+// ── Vista pública: carga desde Supabase DB ──
+async function renderWeeks(unit) {
   const c = document.getElementById('weeks-container');
-  c.innerHTML = '';
+  c.innerHTML = '<p style="text-align:center;color:var(--muted);padding:2rem;">Cargando material...</p>';
 
+  const { data, error } = await sb
+    .from('materiales')
+    .select('*')
+    .eq('unit', unit)
+    .order('created_at', { ascending: true });
+
+  if (error) {
+    c.innerHTML = '<p style="color:red;text-align:center;">Error al cargar archivos.</p>';
+    console.error(error);
+    return;
+  }
+
+  c.innerHTML = '';
   for (let w = 1; w <= 4; w++) {
-    const fs = files[unit][w] || [];
+    const fs = data.filter(f => f.week === w);
 
     let fileHTML = fs.length
       ? fs.map(f => `
@@ -124,7 +119,7 @@ function renderWeeks(unit) {
 }
 
 function getFileIcon(name) {
-  const ext = name.split('.').pop().toLowerCase();
+  const ext = (name || '').split('.').pop().toLowerCase();
   const icons = { pdf: '📕', doc: '📝', docx: '📝', ppt: '📊', pptx: '📊', xls: '📗', xlsx: '📗', zip: '🗜️', rar: '🗜️', mp4: '🎬', mp3: '🎵', jpg: '🖼️', png: '🖼️' };
   return icons[ext] || '📄';
 }
@@ -152,10 +147,9 @@ function renderAdminWeeks(unit) {
           <button class="tab-btn" onclick="switchTab(this, 'link', ${unit}, ${w})">🔗 Link Drive</button>
         </div>
 
-        <!-- Panel subida directa -->
         <div class="tab-panel" id="panel-upload-${unit}-${w}">
-          <div class="upload-zone" id="zone-${unit}-${w}" 
-               ondragover="handleDragOver(event)" 
+          <div class="upload-zone" id="zone-${unit}-${w}"
+               ondragover="handleDragOver(event)"
                ondragleave="handleDragLeave(event)"
                ondrop="handleDrop(event, ${unit}, ${w})"
                onclick="document.getElementById('file-${unit}-${w}').click()">
@@ -163,8 +157,8 @@ function renderAdminWeeks(unit) {
             <p class="upload-hint">Arrastra un archivo o <strong>haz clic</strong></p>
             <p class="upload-sub">PDF, Word, PowerPoint, Excel, etc.</p>
           </div>
-          <input type="file" id="file-${unit}-${w}" style="display:none" 
-                 onchange="handleFileSelect(this, ${unit}, ${w})" 
+          <input type="file" id="file-${unit}-${w}" style="display:none"
+                 onchange="handleFileSelect(this, ${unit}, ${w})"
                  accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.zip,.rar,.mp4,.jpg,.png" />
           <div class="upload-progress" id="progress-${unit}-${w}" style="display:none">
             <div class="progress-bar"><div class="progress-fill" id="fill-${unit}-${w}"></div></div>
@@ -172,7 +166,6 @@ function renderAdminWeeks(unit) {
           </div>
         </div>
 
-        <!-- Panel link Drive -->
         <div class="tab-panel hidden" id="panel-link-${unit}-${w}">
           <div class="link-form">
             <input type="text" id="name-${unit}-${w}" placeholder="Nombre (ej: Clase 1 - Introducción)" class="link-input" />
@@ -188,7 +181,7 @@ function renderAdminWeeks(unit) {
   for (let w = 1; w <= 4; w++) refreshList(unit, w);
 }
 
-// ── Tabs upload / link ──
+// ── Tabs ──
 function switchTab(btn, type, unit, week) {
   const card = btn.closest('.admin-week-card');
   card.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -198,13 +191,8 @@ function switchTab(btn, type, unit, week) {
 }
 
 // ── Drag & Drop ──
-function handleDragOver(e) {
-  e.preventDefault();
-  e.currentTarget.classList.add('drag-over');
-}
-function handleDragLeave(e) {
-  e.currentTarget.classList.remove('drag-over');
-}
+function handleDragOver(e) { e.preventDefault(); e.currentTarget.classList.add('drag-over'); }
+function handleDragLeave(e) { e.currentTarget.classList.remove('drag-over'); }
 function handleDrop(e, unit, week) {
   e.preventDefault();
   e.currentTarget.classList.remove('drag-over');
@@ -216,7 +204,7 @@ function handleFileSelect(input, unit, week) {
   if (file) uploadFile(file, unit, week);
 }
 
-// ── Subir archivo a Supabase Storage ──
+// ── Subir archivo a Supabase Storage + guardar en DB ──
 async function uploadFile(file, unit, week) {
   const MAX_MB = 50;
   if (file.size > MAX_MB * 1024 * 1024) {
@@ -233,11 +221,9 @@ async function uploadFile(file, unit, week) {
   zone.style.pointerEvents = 'none';
   zone.style.opacity = '0.5';
 
-  // Nombre único para evitar colisiones
   const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
   const fileName = `u${unit}_s${week}_${Date.now()}_${safeName}`;
 
-  // Simular progreso mientras sube
   let fakeProgress = 0;
   const fakeInterval = setInterval(() => {
     fakeProgress = Math.min(fakeProgress + Math.random() * 15, 85);
@@ -246,61 +232,66 @@ async function uploadFile(file, unit, week) {
   }, 200);
 
   try {
-    const { data, error } = await sb.storage
+    // 1. Subir archivo al bucket Storage
+    const { error: storageError } = await sb.storage
       .from('materiales')
       .upload(fileName, file, { upsert: false });
 
     clearInterval(fakeInterval);
 
-    if (error) {
-      console.error('Supabase upload error:', error);
-      showToast('❌ Error al subir: ' + error.message, 'error');
-      progressEl.style.display = 'none';
-      zone.style.pointerEvents = 'auto';
-      zone.style.opacity = '1';
+    if (storageError) {
+      console.error('Storage error:', storageError);
+      showToast('❌ Error al subir: ' + storageError.message, 'error');
+      resetUploadUI(progressEl, zone, unit, week);
       return;
     }
 
     fillEl.style.width = '100%';
-    ptextEl.textContent = '✓ ¡Subido!';
+    ptextEl.textContent = '✓ Guardando...';
 
-    // Obtener URL pública
+    // 2. Obtener URL pública
     const { data: publicData } = sb.storage
       .from('materiales')
       .getPublicUrl(fileName);
 
     const publicUrl = publicData.publicUrl;
 
-    // Guardar en localStorage
-    const files = loadFiles();
-    if (!files[unit][week]) files[unit][week] = [];
-    files[unit][week].push({ name: file.name, url: publicUrl, type: 'file' });
-    saveFiles(files);
+    // 3. Guardar metadatos en la tabla "materiales"
+    const { error: dbError } = await sb
+      .from('materiales')
+      .insert({ unit, week, name: file.name, url: publicUrl, type: 'file' });
 
-    showToast(`✅ "${file.name}" subido correctamente`, 'success');
+    if (dbError) {
+      console.error('DB error:', dbError);
+      showToast('❌ Error al registrar en base de datos: ' + dbError.message, 'error');
+      resetUploadUI(progressEl, zone, unit, week);
+      return;
+    }
+
+    ptextEl.textContent = '✓ ¡Subido!';
+    showToast(`✅ "${file.name}" publicado correctamente`, 'success');
     refreshList(unit, week);
 
-    // Reset
-    setTimeout(() => {
-      progressEl.style.display = 'none';
-      fillEl.style.width = '0%';
-      zone.style.pointerEvents = 'auto';
-      zone.style.opacity = '1';
-      document.getElementById(`file-${unit}-${week}`).value = '';
-    }, 1500);
+    setTimeout(() => resetUploadUI(progressEl, zone, unit, week), 1500);
 
   } catch (err) {
     clearInterval(fakeInterval);
     console.error('Error inesperado:', err);
-    showToast('❌ Error inesperado al subir el archivo', 'error');
-    progressEl.style.display = 'none';
-    zone.style.pointerEvents = 'auto';
-    zone.style.opacity = '1';
+    showToast('❌ Error inesperado', 'error');
+    resetUploadUI(progressEl, zone, unit, week);
   }
 }
 
-// ── Agregar link manual ──
-function addLink(unit, week) {
+function resetUploadUI(progressEl, zone, unit, week) {
+  progressEl.style.display = 'none';
+  document.getElementById(`fill-${unit}-${week}`).style.width = '0%';
+  zone.style.pointerEvents = 'auto';
+  zone.style.opacity = '1';
+  document.getElementById(`file-${unit}-${week}`).value = '';
+}
+
+// ── Agregar link manual → guarda en DB ──
+async function addLink(unit, week) {
   const nameEl = document.getElementById(`name-${unit}-${week}`);
   const urlEl  = document.getElementById(`url-${unit}-${week}`);
   const name   = nameEl.value.trim();
@@ -313,10 +304,15 @@ function addLink(unit, week) {
 
   url = convertDriveLink(url);
 
-  const files = loadFiles();
-  if (!files[unit][week]) files[unit][week] = [];
-  files[unit][week].push({ name, url, type: 'link' });
-  saveFiles(files);
+  const { error } = await sb
+    .from('materiales')
+    .insert({ unit, week, name, url, type: 'link' });
+
+  if (error) {
+    console.error(error);
+    showToast('❌ Error al guardar el link: ' + error.message, 'error');
+    return;
+  }
 
   nameEl.value = '';
   urlEl.value  = '';
@@ -330,33 +326,54 @@ function convertDriveLink(url) {
   return url;
 }
 
-// ── Refrescar lista admin ──
-function refreshList(unit, week) {
+// ── Refrescar lista admin (desde DB) ──
+async function refreshList(unit, week) {
   const el = document.getElementById(`list-${unit}-${week}`);
   if (!el) return;
-  const files = loadFiles();
-  const fs = files[unit][week] || [];
-  el.innerHTML = fs.length
-    ? fs.map((f, i) => `
+
+  el.innerHTML = '<p class="empty-list">Cargando...</p>';
+
+  const { data, error } = await sb
+    .from('materiales')
+    .select('*')
+    .eq('unit', unit)
+    .eq('week', week)
+    .order('created_at', { ascending: true });
+
+  if (error) {
+    el.innerHTML = '<p class="empty-list" style="color:red">Error al cargar</p>';
+    return;
+  }
+
+  el.innerHTML = data.length
+    ? data.map(f => `
         <div class="uploaded-item">
           <span>${getFileIcon(f.name)}</span>
           <a href="${f.url}" target="_blank" class="fname" title="${f.name}">${f.name}</a>
-          <button class="del-btn" onclick="deleteFile(${unit},${week},${i})" title="Eliminar">✕</button>
+          <button class="del-btn" onclick="deleteFile('${f.id}', ${unit}, ${week})" title="Eliminar">✕</button>
         </div>`).join('')
     : '<p class="empty-list">Sin archivos en esta semana</p>';
 }
 
-// ── Eliminar ──
-function deleteFile(unit, week, idx) {
+// ── Eliminar (por ID de DB) ──
+async function deleteFile(id, unit, week) {
   if (!confirm('¿Eliminar este archivo de la lista?')) return;
-  const files = loadFiles();
-  files[unit][week].splice(idx, 1);
-  saveFiles(files);
+
+  const { error } = await sb
+    .from('materiales')
+    .delete()
+    .eq('id', id);
+
+  if (error) {
+    showToast('❌ Error al eliminar: ' + error.message, 'error');
+    return;
+  }
+
   refreshList(unit, week);
   showToast('🗑️ Archivo eliminado', 'info');
 }
 
-// ── Toast notifications ──
+// ── Toast ──
 function showToast(msg, type = 'info') {
   const container = document.getElementById('toast-container');
   const toast = document.createElement('div');
