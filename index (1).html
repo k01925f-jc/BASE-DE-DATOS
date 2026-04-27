@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Base de Datos II - UPLA</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Sora:wght@300;400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- ════════════ TOAST CONTAINER ════════════ -->
+<div id="toast-container"></div>
+
+<!-- ════════════════ NAV ════════════════ -->
+<nav>
+  <div class="nav-logo" onclick="goTo('home')">
+    <img src="Logo.png" alt="Logo UPLA" class="upla-icon">
+    UPLA<span>:</span>BD2
+  </div>
+  <div class="nav-menu">
+    <a onclick="goToUnit(1)">Unidad 1</a>
+    <a onclick="goToUnit(2)">Unidad 2</a>
+    <a onclick="goToUnit(3)">Unidad 3</a>
+    <a onclick="goToUnit(4)">Unidad 4</a>
+    <a onclick="scrollToSection('contacto')">Contacto</a>
+  </div>
+  <div class="nav-right">
+    <button class="btn-login-nav" onclick="showLoginModal()">Login Admin</button>
+  </div>
+</nav>
+
+<!-- ══════════════ PAGE: HOME ══════════════ -->
+<div id="page-home" class="page active">
+  <div class="hero">
+    <div class="grid-bg"></div>
+    <div class="hero-tag">Curso de Base de Datos · UPLA 2025</div>
+    <h1>Base de <span>Datos II</span></h1>
+    <p>Accede al material académico organizado por unidades y semanas. Fundamentos, diseño, modelado y gestión de bases de datos.</p>
+
+    <div class="unit-cards">
+      <div class="unit-pill" onclick="goToUnit(1)">
+        <span class="u-num">U1</span> Fundamentos
+      </div>
+      <div class="unit-pill" onclick="goToUnit(2)">
+        <span class="u-num">U2</span> Modelado
+      </div>
+      <div class="unit-pill" onclick="goToUnit(3)">
+        <span class="u-num">U3</span> SQL
+      </div>
+      <div class="unit-pill" onclick="goToUnit(4)">
+        <span class="u-num">U4</span> Administración
+      </div>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- Presentación -->
+  <div id="presentacion" class="section" style="max-width:900px; margin:0 auto;">
+    <div class="section-title">// 01 — Presentación</div>
+    <h2>¿Qué aprenderás en este curso?</h2>
+    <p>Diseñado para brindarte los conocimientos fundamentales sobre el diseño, implementación y gestión de bases de datos relacionales y no relacionales.</p>
+    <div class="about-grid">
+      <div class="about-card">
+        <div class="icon">🗄️</div>
+        <h4>Fundamentos</h4>
+        <p>Conceptos básicos de bases de datos, modelos relacionales, entidades y atributos.</p>
+      </div>
+      <div class="about-card">
+        <div class="icon">📐</div>
+        <h4>Modelado</h4>
+        <p>Diagramas ER, normalización de datos y diseño de esquemas eficientes.</p>
+      </div>
+      <div class="about-card">
+        <div class="icon">💡</div>
+        <h4>SQL Avanzado</h4>
+        <p>Consultas complejas, joins, subconsultas, funciones y procedimientos almacenados.</p>
+      </div>
+      <div class="about-card">
+        <div class="icon">🔐</div>
+        <h4>Administración</h4>
+        <p>Seguridad, respaldo, rendimiento y gestión de usuarios en sistemas de BD.</p>
+      </div>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- Contacto -->
+  <div id="contacto" class="section" style="max-width:900px; margin:0 auto;">
+    <div class="section-title">// 02 — Contacto</div>
+    <h2>¿Tienes alguna pregunta?</h2>
+    <p>Completa el formulario y nos pondremos en contacto contigo a la brevedad.</p>
+    <div class="contact-form">
+      <div class="form-group">
+        <label>Nombre completo</label>
+        <input type="text" placeholder="Tu nombre completo" />
+      </div>
+      <div class="form-group">
+        <label>Correo electrónico</label>
+        <input type="email" placeholder="correo@ejemplo.com" />
+      </div>
+      <div class="form-group">
+        <label>Mensaje</label>
+        <textarea placeholder="Escribe tu consulta aquí..."></textarea>
+      </div>
+      <button class="btn-send" onclick="sendContact()">Enviar mensaje →</button>
+    </div>
+  </div>
+
+  <footer>UPLA &nbsp;·&nbsp; Base de Datos II &copy; 2025</footer>
+</div>
+
+<!-- ═══════════════ PAGE: UNIT ═══════════════ -->
+<div id="page-unit" class="page">
+  <div class="unit-header">
+    <button class="back-btn" onclick="goTo('home')">← Inicio</button>
+    <h1>Unidad <span id="unit-num">1</span></h1>
+    <p id="unit-desc" style="color:var(--muted); margin-top:0.4rem; font-size:0.95rem;"></p>
+  </div>
+  <div class="weeks-grid" id="weeks-container"></div>
+  <footer>UPLA &nbsp;·&nbsp; Base de Datos II &copy; 2025</footer>
+</div>
+
+<!-- ══════════════ PAGE: ADMIN ══════════════ -->
+<div id="page-admin" class="page">
+  <div class="admin-header">
+    <div class="admin-header-left">
+      <h2>// Panel de Administrador</h2>
+      <p>Sube archivos o agrega links de Google Drive para cada semana</p>
+    </div>
+    <button class="btn-logout" onclick="doLogout()">Cerrar sesión</button>
+  </div>
+  <div class="admin-content">
+    <h3>// Selecciona una Unidad</h3>
+    <div class="admin-units">
+      <button class="admin-unit-tab active" onclick="selectAdminUnit(1, this)">Unidad 1</button>
+      <button class="admin-unit-tab" onclick="selectAdminUnit(2, this)">Unidad 2</button>
+      <button class="admin-unit-tab" onclick="selectAdminUnit(3, this)">Unidad 3</button>
+      <button class="admin-unit-tab" onclick="selectAdminUnit(4, this)">Unidad 4</button>
+    </div>
+    <div class="admin-weeks" id="admin-weeks-container"></div>
+  </div>
+  <footer>UPLA &nbsp;·&nbsp; Base de Datos II &copy; 2025</footer>
+</div>
+
+<!-- ════════════ LOGIN MODAL ════════════ -->
+<div id="login-modal" class="modal">
+  <div class="modal-content">
+    <span class="modal-close" onclick="hideLoginModal()">✕</span>
+    <div class="modal-logo">🔐</div>
+    <h3>// Acceso Admin</h3>
+    <p class="modal-subtitle">Panel de administración UPLA</p>
+    <label>Usuario</label>
+    <input type="text" id="modal-user" placeholder="admin" autocomplete="username" />
+    <label>Contraseña</label>
+    <input type="password" id="modal-pass" placeholder="••••••" autocomplete="current-password" />
+    <button class="btn-login" onclick="doLoginModal()">Ingresar →</button>
+    <div class="login-err" id="modal-err">Usuario o contraseña incorrectos</div>
+  </div>
+</div>
+
+<!-- Supabase SDK -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="script.js"></script>
+</body>
+</html>
