@@ -19,11 +19,16 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 body {
-  font-family: 'Sora', sans-serif;
+  font-family: 'Forum', sans-serif;
   background: var(--bg);
   color: var(--text);
   min-height: 100vh;
   overflow-x: hidden;
+   line-height: 1.6;
+}
+h1, h2, h3, h4, .hero h1, .unit-header h1, .section h2 {
+  font-weight: 400;
+  letter-spacing: 0.02em;
 }
 
 .page { display: none; min-height: 100vh; }
